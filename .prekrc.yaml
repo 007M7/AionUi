@@ -1,0 +1,13 @@
+checks:
+  lint:
+    command: bun run lint
+    required: true
+  test:
+    command: bun test
+    required: true
+  format:
+    command: bun run format:check
+    required: true
+  typecheck:
+    command: bun run typecheck
+    required: false
