@@ -27,7 +27,9 @@
       }
     ],
     "no-floating-promises": "error",
-    "no-await-thenable": "error"
+    "no-await-thenable": "error",
+    "security/no-insecure-random": "warn",
+    "no-unreachable": "error"
   },
   "overrides": [
     {
