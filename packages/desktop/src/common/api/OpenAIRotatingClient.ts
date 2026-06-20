@@ -16,9 +16,10 @@ export class OpenAIRotatingClient extends RotatingApiClient<OpenAI> {
   constructor(api_keys: string, config: OpenAIClientConfig = {}, options: RotatingApiClientOptions = {}) {
     const createClient = (api_key: string) => {
       const cleanedApiKey = api_key.replace(/[\s\r\n\t]/g, '').trim();
-      const openaiConfig: any = {
+      // Use typed OpenAI client options instead of `any`
+      const openaiConfig: OpenAI.ClientOptions = {
         baseURL: config.baseURL,
-        api_key: cleanedApiKey,
+        apiKey: cleanedApiKey,  // Correct field name: apiKey, not api_key
         defaultHeaders: config.defaultHeaders,
       };
 
@@ -34,9 +35,10 @@ export class OpenAIRotatingClient extends RotatingApiClient<OpenAI> {
   }
 
   protected getCurrentApiKey(): string | undefined {
+    // Rely solely on ApiKeyManager; do NOT read from process.env to
+    // avoid breaking multi-key rotation and leaking keys to child processes.
     if (this.apiKeyManager?.hasMultipleKeys()) {
-      // For OpenAI, try to get from environment first
-      return process.env.OPENAI_API_KEY || this.apiKeyManager.getCurrentKey();
+      return this.apiKeyManager.getCurrentKey();
     }
     // Use base class method for single key
     return super.getCurrentApiKey();

@@ -962,3 +962,17 @@ app.on('quit', (_event, exitCode) => {
 
 // In this file you can include the rest of your app's specific main process
 // code. You can also put them in separate files and import them here.
+// Global error handlers for main process
+// Sentry captures these automatically via @sentry/electron, but we keep the handlers to prevent Electron's default error dialog.
+// In development, log to console so debugging is possible without Sentry.
+process.on('uncaughtException', (error) => {
+  if (!app.isPackaged) {
+    console.error('[AionUi] Uncaught exception (captured by Sentry in production):', error);
+  }
+});
+
+process.on('unhandledRejection', (reason) => {
+  if (!app.isPackaged) {
+    console.error('[AionUi] Unhandled rejection (captured by Sentry in production):', reason);
+  }
+});

@@ -10,20 +10,52 @@ import { AuthType } from '@office-ai/aioncli-core';
  * Multi-API Key Manager with Time-based Blacklisting
  * Handles rotation of multiple API keys for different authentication types
  * Blacklists failed keys for 90 seconds to allow rate limits to recover
- *
- * IMPORTANT: API keys are NEVER written to process.env to prevent
- * accidental leakage to child processes.
  */
 export class ApiKeyManager {
   private keys: string[] = [];
   private currentIndex = 0;
   private authType: AuthType;
+  private envKey: string;
   private blacklistedUntil: Map<number, number> = new Map(); // keyIndex -> recoveryTimestamp
   private readonly BLACKLIST_DURATION = 90 * 1000; // 90 seconds
 
   constructor(keysString: string, authType: AuthType) {
     this.authType = authType;
+    this.envKey = this.getEnvironmentKey(authType);
     this.keys = this.parseKeys(keysString);
+    this.initializeWithRandomKey();
+  }
+
+  private getEnvironmentKey(authType: AuthType): string {
+    switch (authType) {
+      case AuthType.USE_OPENAI:
+        return 'OPENAI_API_KEY';
+      case AuthType.USE_ANTHROPIC:
+        return 'ANTHROPIC_API_KEY';
+      case AuthType.USE_GEMINI:
+        return 'GEMINI_API_KEY';
+      default:
+        throw new Error(`Multi-key not supported for auth type: ${authType}`);
+    }
+  }
+
+  private parseKeys(keysString: string): string[] {
+    if (!keysString) return [];
+    return keysString
+      .split(/[,\n]/)
+      .map((k) => k.trim())
+      .filter((k) => k.length > 0);
+  }
+
+  private initializeWithRandomKey(): void {
+    if (this.hasMultipleKeys()) {
+      this.currentIndex = Math.floor(Math.random() * this.keys.length);
+      this.updateEnvironment();
+    }
+  }
+
+  private updateEnvironment(): void {
+    process.env[this.envKey] = this.keys[this.currentIndex];
   }
 
   /**
@@ -49,6 +81,7 @@ export class ApiKeyManager {
     if (availableIndex !== -1) {
       const previousIndex = this.currentIndex;
       this.currentIndex = availableIndex;
+      this.updateEnvironment();
       console.log(
         `[MultiKey] Rotated ${this.authType}: #${previousIndex + 1} → #${this.currentIndex + 1}/${this.keys.length}`
       );
@@ -108,6 +141,7 @@ export class ApiKeyManager {
    */
   getStatus(): {
     authType: AuthType;
+    envKey: string;
     current: number;
     total: number;
     keys: string[];
@@ -124,6 +158,7 @@ export class ApiKeyManager {
 
     return {
       authType: this.authType,
+      envKey: this.envKey,
       current: this.currentIndex + 1,
       total: this.keys.length,
       keys: this.keys,
@@ -134,13 +169,5 @@ export class ApiKeyManager {
   getCurrentKey(): string {
     if (this.keys.length === 0) return '';
     return this.keys[this.currentIndex] || '';
-  }
-
-  private parseKeys(keysString: string): string[] {
-    if (!keysString) return [];
-    return keysString
-      .split(/[,\n]/)
-      .map((k) => k.trim())
-      .filter((k) => k.length > 0);
   }
 }

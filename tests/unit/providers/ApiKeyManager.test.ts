@@ -44,40 +44,12 @@ describe('ApiKeyManager', () => {
       expect(manager.hasMultipleKeys()).toBe(true);
       const status = manager.getStatus();
       expect(status.keys).toEqual(['key1', 'key2', 'key3']);
-      expect(status.envKey).toBe('ANTHROPIC_API_KEY');
     });
 
     it('trims whitespace and filters empty lines', () => {
       const manager = new ApiKeyManager(' key1 , key2 ,  ,key3  ', AuthType.USE_OPENAI);
       const status = manager.getStatus();
       expect(status.keys).toEqual(['key1', 'key2', 'key3']);
-    });
-  });
-
-  describe('environment key setting', () => {
-    it('sets OPENAI_API_KEY for multiple keys', () => {
-      const manager = new ApiKeyManager('key1,key2', AuthType.USE_OPENAI);
-      // With multiple keys, one of them is set to environment
-      expect(process.env.OPENAI_API_KEY).toBeTruthy();
-      expect(['key1', 'key2']).toContain(process.env.OPENAI_API_KEY);
-    });
-
-    it('sets ANTHROPIC_API_KEY for multiple keys', () => {
-      const manager = new ApiKeyManager('key1,key2', AuthType.USE_ANTHROPIC);
-      expect(process.env.ANTHROPIC_API_KEY).toBeTruthy();
-      expect(['key1', 'key2']).toContain(process.env.ANTHROPIC_API_KEY);
-    });
-
-    it('does not set environment for single key (documented behavior)', () => {
-      // Single key case: initializeWithRandomKey only runs for hasMultipleKeys()
-      const manager = new ApiKeyManager('sk-single', AuthType.USE_OPENAI);
-      expect(process.env.OPENAI_API_KEY).toBeUndefined();
-    });
-
-    it('throws for unsupported auth type', () => {
-      expect(() => {
-        new ApiKeyManager('key', 'UNSUPPORTED_TYPE' as AuthType);
-      }).toThrow(/Multi-key not supported for auth type/);
     });
   });
 

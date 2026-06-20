@@ -21,7 +21,6 @@ export interface AnthropicClientConfig {
 }
 
 export class AnthropicRotatingClient extends RotatingApiClient<Anthropic> {
-  private readonly config: AnthropicClientConfig;
   private readonly converter: OpenAI2AnthropicConverter;
 
   constructor(apiKeys: string, config: AnthropicClientConfig = {}, options: RotatingApiClientOptions = {}) {
@@ -44,16 +43,15 @@ export class AnthropicRotatingClient extends RotatingApiClient<Anthropic> {
     };
 
     super(apiKeys, AuthType.USE_ANTHROPIC, createClient, options);
-    this.config = config;
     this.converter = new OpenAI2AnthropicConverter({
       defaultModel: config.model || 'claude-sonnet-4-20250514',
     });
   }
 
   protected getCurrentApiKey(): string | undefined {
+    // Rely solely on ApiKeyManager; never read from process.env
     if (this.apiKeyManager?.hasMultipleKeys()) {
-      // For Anthropic, try to get from environment first
-      return process.env.ANTHROPIC_API_KEY || this.apiKeyManager.getCurrentKey();
+      return this.apiKeyManager.getCurrentKey();
     }
     // Use base class method for single key
     return super.getCurrentApiKey();

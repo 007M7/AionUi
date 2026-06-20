@@ -8,9 +8,13 @@
  * Common approval key interface for permission memory
  * Used by Gemini, ACP, and Codex agents
  */
+
+/** Operation types supported by the approval system */
+export type ApprovalAction = 'exec' | 'edit' | 'read' | 'info' | 'write' | 'delete';
+
 export type IApprovalKey = {
-  /** Operation type: exec, edit, read, info, etc. */
-  action: string;
+  /** Operation type: exec, edit, read, info, write, delete */
+  action: ApprovalAction;
   /** Optional sub-type identifier (e.g., command name, tool name) */
   identifier?: string;
 };
