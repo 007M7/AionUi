@@ -10,47 +10,65 @@ See [docs/contributing/development.md](docs/contributing/development.md) for env
 - [bun](https://bun.sh)
 - [prek](https://github.com/j178/prek) (`npm install -g @j178/prek`)
 
+- **Test commands**:
+  - `bun test` 鈥?run all tests
+  - `bun test --project dom` 鈥?run DOM-related tests
+  - `bun run test:coverage` 鈥?generate coverage report
+  - `bun run test:e2e` 鈥?run end-to-end tests
+
+### PR Checklist
+
+Before submitting, please confirm:
+
+- [ ] `bun run format` passed
+- [ ] `bun run lint` passed
+- [ ] `bunx vitest run` passed
+- [ ] No `any` type violations (TypeScript strict mode)
+- [ ] No unhandled Promise rejections
+- [ ] PR only contains one scope (atomic)
+- [ ] Commits follow Conventional Commit format
+
 ## Rule 1: Atomic PRs
 
 Each pull request must contain **exactly one feature or one bug fix** that cannot be further decomposed.
 
-**How to check:** Ask yourself (or an AI): _"Can this diff be split into multiple independently mergeable PRs?"_ If yes, split it before submitting.
+**How to check:** Ask yourself (or an AI): _"Can this diff be split into multiple independently mergeable PRs?"_ If so, split it before submitting.
 
 ### Examples
 
 **Acceptable (single PR):**
 
-- A bug fix with one root cause, even if it touches multiple files (e.g., fixing toast z-index across modal and chat layers)
-- A single coherent feature (e.g., team creation modal with form validation)
+- A single-root-cause bug fix, even if it touches multiple files (e.g., fixing toast z-index across modal and chat layers)
+- A complete feature (e.g., team creation modal and its form validation)
 
-**Must be split into separate PRs:**
+**Must be split into multiple PRs:**
 
-- Team chat scroll fix + Sentry user tracking + office preview performance optimization = 3 PRs
-- Unrelated bug fixes bundled together (e.g., titlebar navigation fix + i18n missing key + speech input UI fix)
-- Independent technical layers (e.g., IPC bridge refactor + renderer component + worker process change for unrelated features)
+- Team chat scroll fix + Sentry user tracking + Office preview perf improvements = 3 PRs
+- Multiple unrelated bug fixes bundled together (e.g., titlebar navigation fix + i18n missing keys + voice input UI fix)
+- Independent technical layers (e.g., IPC bridge refactor + renderer process components + Worker process changes, belonging to unrelated features)
 
 ## Rule 2: Commit and PR Title Format
 
-Commit messages and PR titles must use Conventional Commit format in English:
+Commit messages and PR titles must use the English Conventional Commit format:
 
 ```text
 <type>(<scope>): <subject>
 ```
 
-Use one of these types:
+`type` must be one of:
 
-| Type       | Meaning                  | Changelog visibility |
-| ---------- | ------------------------ | -------------------- |
-| `feat`     | New user-facing behavior | Visible              |
-| `fix`      | Bug fix                  | Visible              |
-| `perf`     | Performance improvement  | Visible              |
-| `refactor` | Code restructuring       | Visible              |
-| `docs`     | Documentation            | Visible              |
-| `style`    | Formatting or styles     | Hidden               |
-| `chore`    | Maintenance work         | Hidden               |
-| `test`     | Tests                    | Hidden               |
-| `ci`       | CI configuration         | Hidden               |
-| `build`    | Build system             | Hidden               |
+| Type       | Purpose                  | Changelog Visible |
+| ---------- | ------------------------ | ----------------- |
+| `feat`     | New user-facing feature  | Yes               |
+| `fix`      | Bug fix                  | Yes               |
+| `perf`     | Performance improvement  | Yes               |
+| `refactor` | Code refactoring         | Yes               |
+| `docs`     | Documentation            | Yes               |
+| `style`    | Formatting or styling    | No                |
+| `chore`    | Maintenance work         | No                |
+| `test`     | Tests                    | No                |
+| `ci`       | CI configuration         | No                |
+| `build`    | Build system changes     | No                |
 
 Examples:
 
@@ -58,23 +76,23 @@ Examples:
 - `feat(workspace): add file preview shortcuts`
 - `docs(contributing): document pr title format`
 
-## Rule 3: Pass Local Checks Before Push
+## Rule 3: Pre-Push Local Validation
 
-CI will reject your PR if these checks fail. Run them locally **before pushing** to save time.
+CI will reject your PR if these checks do not pass. **Run them locally before pushing to save time.**
 
 ### Step-by-step
 
 ```bash
-# 1. Format (always run — covers .ts, .tsx, .css, .json, .md)
+# 1. Format (required 鈥?applies to .ts, .tsx, .css, .json, .md)
 bun run format
 
-# 2. Lint (skip if no .ts/.tsx files changed)
+# 2. Lint (skip if no .ts/.tsx changes)
 bun run lint
 
-# 3. Type check (skip if no .ts/.tsx files changed)
+# 3. Type check (skip if no .ts/.tsx changes)
 bunx tsc --noEmit
 
-# 4. i18n validation (only if you changed files in src/renderer/, locales/, or src/common/config/i18n/)
+# 4. i18n validation (only if files under src/renderer/, locales/, or src/common/config/i18n/ are changed)
 bun run i18n:types
 node scripts/check-i18n.js
 
@@ -82,7 +100,7 @@ node scripts/check-i18n.js
 bunx vitest run
 ```
 
-### One-command alternative
+### One-liner
 
 This replicates the exact CI quality check, then runs tests:
 
@@ -91,23 +109,23 @@ prek run --from-ref origin/main --to-ref HEAD
 bunx vitest run
 ```
 
-> `prek` runs format-check + lint + tsc in read-only mode. If it reports issues, run the auto-fix commands above first, then re-run prek.
+> `prek` runs format-check + lint + tsc in parallel. If errors appear, run the auto-fix commands above, then re-run `prek`.
 
-### Common failures and fixes
+### Common failures
 
-| Failure       | Fix                                                                  |
-| ------------- | -------------------------------------------------------------------- |
-| Format errors | `bun run format` (auto-fixes)                                        |
-| Lint errors   | `bun run lint:fix` for auto-fixable issues; fix the rest manually    |
-| Type errors   | Fix the TypeScript issue, then re-run `bunx tsc --noEmit`            |
-| i18n errors   | Check for missing keys; run `bun run i18n:types` to regenerate types |
-| Test failures | Fix the failing test or implementation; re-run `bunx vitest run`     |
+| Failure Type | How To Fix                                               |
+| ------------ | -------------------------------------------------------- |
+| Format error | `bun run format` (auto-fixed)                            |
+| Lint error   | `bun run lint:fix` for auto-fixable parts, rest manually |
+| Type error   | Fix TypeScript issues, re-run `bunx tsc --noEmit`        |
+| i18n error   | Check for missing keys, run `bun run i18n:types`         |
+| Test failures | Fix the failing test or implementation; re-run `bunx vitest run` |
 
 ## Enforcement
 
-When these rules are not followed, maintainers may:
+If a PR does not follow the rules, maintainers may:
 
-1. **Close and request resubmission** (preferred) — you retain full credit upon proper resubmission.
-2. **Cherry-pick valuable portions** — your authorship is preserved in git history, but the original PR shows as "Closed" rather than "Merged".
+1. **Close and ask for resubmission** (preferred) 鈥?you retain full authorship when correctly re-submitted.
+2. **Cherry-pick valuable parts** 鈥?your author info is kept in git history, but the original PR appears as "Closed" rather than "Merged".
 
-Code style, dependency choices, and documentation polish are handled by maintainers post-merge. Focus your PR on the functional change.
+Code style, dependencies, and documentation polish are handled by maintainers after merging. Your PR only needs to focus on the functional change itself.
